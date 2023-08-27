@@ -15,6 +15,7 @@ const ModalSurat = ({ isOpen, onClose, surat }) => {
   const [tglTerima, setTglTerima] = useState(now.toISOString().substr(0, 10));
   const [perihal, setPerihal] = useState('');
   const [disposisi, setDisposisi] = useState('');
+  const [jenisSurat, setJenisSurat] = useState('surat-masuk');
   const [lampiran, setLampiran] = useState(0);
   const [file, setFile] = useState(null);
   const inputRef = useRef(null);
@@ -118,6 +119,7 @@ const ModalSurat = ({ isOpen, onClose, surat }) => {
             perihal,
             disposisi,
             lampiran,
+            jenisSurat,
             fileURL: downloadURL
           });   
         }else{
@@ -129,7 +131,8 @@ const ModalSurat = ({ isOpen, onClose, surat }) => {
             tglSurat,
             tglTerima,
             perihal,
-            disposisi,
+            disposisi,            
+            jenisSurat,
             lampiran,
           });   
         }

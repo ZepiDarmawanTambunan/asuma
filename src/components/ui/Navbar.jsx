@@ -22,7 +22,7 @@ function Navbar() {
   }
 
   return (
-    <nav className="bg-[#435334] p-4 fixed right-0 left-0 z-10">
+    <nav className="bg-[#435334] p-4 fixed right-0 left-0 z-10 print:hidden">
       <div className="container mx-auto flex justify-between items-center">
       <div className="flex items-center">
           <div className="w-10 h-10 rounded-full overflow-hidden">

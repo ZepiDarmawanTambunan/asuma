@@ -1,0 +1,32 @@
+export const dataSuratMasukDummy = [
+    {
+      id: '1',
+      no_surat: 'SM/2023/001',
+      no_agenda: 'AG/2023/001',
+      tgl_surat: '2023-01-10',
+      tgl_terima: '2023-01-15',
+      perihal: 'Permohonan Izin',
+      disposisi: 'Sesuai prosedur',
+      asal: 'PT ABC',
+    },
+    {
+      id: '2',
+      no_surat: 'SM/2023/002',
+      no_agenda: 'AG/2023/002',
+      tgl_surat: '2023-02-05',
+      tgl_terima: '2023-02-10',
+      perihal: 'Pemberitahuan Rapat',
+      disposisi: 'Diteruskan ke Bagian Rapat',
+      asal: 'PT XYZ',
+    },
+    {
+      id: '3',
+      no_surat: 'SM/2023/002',
+      no_agenda: 'AG/2023/002',
+      tgl_surat: '2023-02-05',
+      tgl_terima: '2023-02-10',
+      perihal: 'Pemberitahuan Rapat',
+      disposisi: 'Diteruskan ke Bagian Rapat',
+      asal: 'PT XYZ',
+    },
+]
