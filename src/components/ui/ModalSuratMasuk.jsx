@@ -1,30 +1,37 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { firebase } from '../../config/firebaseConfig';
 import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
-import { getFirestore, collection, addDoc, doc, updateDoc } from 'firebase/firestore';
+import { getFirestore, collection, addDoc, doc, updateDoc, getDoc, onSnapshot, query } from 'firebase/firestore';
 import InputCustom from './Input';
+import { useAuth } from '../../context/AuthProvider';
+import SelectCustom from './SelectCustom';
 
-const ModalSurat = ({ isOpen, onClose, surat }) => {
+const ModalSurat = ({ isOpen, onClose, surat, bagianIdSurat }) => {
+  // CONFIG
+  const dateNow = new Date(); //now for default data tglSurat, tglKeluar
+  const db = getFirestore(firebase);
+  const bagianRef = collection(db, 'bagian'); //get bagian
   
-  const now = new Date();
+  // DATA
   const [noSurat, setNoSurat] = useState('');
   const [noAgenda, setNoAgenda] = useState('');
   const [asal, setAsal] = useState('');
   const [tujuan, setTujuan] = useState('');
-  const [tglSurat, setTglSurat] = useState(now.toISOString().substr(0, 10));
-  const [tglTerima, setTglTerima] = useState(now.toISOString().substr(0, 10));
+  const [tglSurat, setTglSurat] = useState(dateNow.toISOString().substr(0, 10));
+  const [tglTerima, setTglTerima] = useState(dateNow.toISOString().substr(0, 10));
   const [perihal, setPerihal] = useState('');
   const [disposisi, setDisposisi] = useState('');
   const [jenisSurat, setJenisSurat] = useState('surat-masuk');
   const [lampiran, setLampiran] = useState(0);
   const [file, setFile] = useState(null);
   const inputRef = useRef(null);
+  
+  // DATA BAGIAN
+  const [bagianId, setBagianId] = useState('');
+  const [bagianList, setBagianList] = useState([]);
+  const tujuanBagianId = bagianList.filter((e) => e.label === tujuan)[0]?.value; //tujuan surat ke bagian apa
 
-  // const handleFileChange = (e)=> {
-  //   const selectedFile = event.target.files[0];
-  //   setFile(selectedFile);
-  // };
-
+  // EDIT USE EFFECT
   useEffect(() => {
     if (surat) {
       setNoSurat(surat.noSurat);
@@ -40,6 +47,47 @@ const ModalSurat = ({ isOpen, onClose, surat }) => {
       reset();
     }
   }, [surat]);
+  
+  // GET BAGIANLIST & DEFAULT VALUE SELECT ASAL
+  useEffect(() => {
+    const querybagian = query(bagianRef);
+    const unsubscribe = onSnapshot(querybagian, (querySnapshot) => {
+      const bagianData = [];
+      querySnapshot.forEach((doc) => {
+        const data = doc.data();
+        // if (doc.id !== bagianId) {
+          bagianData.push({
+            value: doc.id,
+            label: data.nama,
+          });
+        // }
+      });
+      setBagianList(bagianData);
+      if (bagianData.length > 0 && !asal) {
+        setAsal(bagianData[0].value);
+      }
+    });
+    return () => unsubscribe();
+  }, [bagianId, asal]);
+
+  // GET BAGIAN ID, THIS TUJUAN (NAMA)
+  const fetchBagian = () => {
+    try {
+      const bagian = bagianList.filter((e) => e.value === bagianId)[0];
+      if(bagian){
+        setTujuan(bagian?.label);
+      }
+    } catch (error) {
+      alert('error :'+error);
+    }
+  }
+  
+  useEffect(() => {
+    setBagianId(bagianIdSurat);
+    if(bagianList.length>0 && bagianIdSurat){
+      fetchBagian();
+    }
+  }, [bagianList, bagianIdSurat])
 
   const handleFileChange = ()=> {
     const selectedFile = inputRef.current.files[0];
@@ -54,7 +102,6 @@ const ModalSurat = ({ isOpen, onClose, surat }) => {
   const handleSubmit = async () => {
     try {
       const storage = getStorage(firebase);
-      const db = getFirestore(firebase);
       const suratRef = collection(db, 'surat');
 
       if(surat){
@@ -80,7 +127,7 @@ const ModalSurat = ({ isOpen, onClose, surat }) => {
             noSurat,
             noAgenda,
             asal,
-            tujuan,
+            tujuan: tujuanBagianId,
             tglSurat,
             tglTerima,
             perihal,
@@ -94,7 +141,7 @@ const ModalSurat = ({ isOpen, onClose, surat }) => {
             noSurat,
             noAgenda,
             asal,
-            tujuan,
+            tujuan: tujuanBagianId,
             tglSurat,
             tglTerima,
             perihal,
@@ -113,7 +160,7 @@ const ModalSurat = ({ isOpen, onClose, surat }) => {
             noSurat,
             noAgenda,
             asal,
-            tujuan,
+            tujuan: tujuanBagianId,
             tglSurat,
             tglTerima,
             perihal,
@@ -127,7 +174,7 @@ const ModalSurat = ({ isOpen, onClose, surat }) => {
             noSurat,
             noAgenda,
             asal,
-            tujuan,
+            tujuan: tujuanBagianId,
             tglSurat,
             tglTerima,
             perihal,
@@ -153,14 +200,14 @@ const ModalSurat = ({ isOpen, onClose, surat }) => {
     setPerihal('');
     setDisposisi('');
     setLampiran(0);
-    setTglSurat(now.toISOString().substr(0, 10));
-    setTglTerima(now.toISOString().substr(0, 10));
+    setTglSurat(dateNow.toISOString().substr(0, 10));
+    setTglTerima(dateNow.toISOString().substr(0, 10));
     if (inputRef.current) {
       inputRef.current.value = '';
     }
     setFile(null);
+    setBagianList([]);
   }
-
 
     return (
         <div className={`fixed inset-0 ${isOpen ? 'flex' : 'hidden'} justify-center items-center z-50`}>
@@ -187,8 +234,14 @@ const ModalSurat = ({ isOpen, onClose, surat }) => {
             <h2 className="text-xl font-semibold mb-4">{surat ? 'Edit Surat' : 'Tambah Surat'}</h2>
             <InputCustom type='text' id="no_surat" placeholder="No Surat" value={noSurat} handleChange={setNoSurat} />
             <InputCustom type='text' id="no_agenda" placeholder="No Agenda" value={noAgenda} handleChange={setNoAgenda} />
-            <InputCustom type='text' id="asal" placeholder="Asal" value={asal} handleChange={setAsal} />
-            <InputCustom type='text' id="tujuan" placeholder="Tujuan" value={tujuan} handleChange={setTujuan} />
+            <SelectCustom           
+              id="asal"
+              label="Asal Surat"
+              onChange={(e) => setAsal(e.target.value)}
+              options={bagianList}
+              value={asal} 
+            />
+            <InputCustom label="Tujuan Surat" type='text' id="tujuan" placeholder="Tujuan" value={tujuan} handleChange={setTujuan} disabled />
             <InputCustom type='date' id="tgl_surat" placeholder="Tanggal Surat" value={tglSurat} handleChange={setTglSurat} label="Tanggal Surat" />
             <InputCustom type='date' id="tgl_terima" placeholder="Tanggal Terima" value={tglTerima} handleChange={setTglTerima} label="Tanggal Terima" />
             <InputCustom type='textarea' id="perihal" placeholder="Perihal" value={perihal} handleChange={setPerihal} />

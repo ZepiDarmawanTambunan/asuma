@@ -10,13 +10,15 @@ const InputCustom = ({
     label, 
     min = 0,
     accept=".pdf,.doc,.docx,.jpg,.jpeg,.png",
-    inputRef
+    inputRef,
+    disabled = false,
 }) => {
     const inputProps = {
         id,
         type,
         placeholder,
         className: "mb-2 p-2 border rounded w-full",
+        disabled
     };
 
     if (type === 'textarea') {

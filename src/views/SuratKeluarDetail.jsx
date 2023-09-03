@@ -2,16 +2,22 @@ import React, { useState } from 'react';
 import Dashboard from '../components/ui/Dashboard';
 import { useParams } from 'react-router-dom';
 import { useEffect } from 'react';
-import { doc, getDoc, getFirestore } from 'firebase/firestore';
+import { collection, doc, getDoc, getFirestore, onSnapshot, query } from 'firebase/firestore';
 import { firebase } from '../config/firebaseConfig';
 
 const SuratKeluarDetail = () => {
   const { id } = useParams();
+  const db = getFirestore(firebase);
+  // SURAT
+  const suratRef = doc(db, 'surat', id);
   const [suratData, setSuratData] = useState(null);
-  const fetchSuratData = async () => {
-    const db = getFirestore(firebase);
-    const suratRef = doc(db, 'surat', id);
 
+  // BAGIAN
+  const bagianRef = collection(db, 'bagian');
+  const [bagianList, setBagianList] = useState([]);
+
+  // GET SURAT (ID) DATA
+  const fetchSuratData = async () => {
     try {
       const docSnap = await getDoc(suratRef);
       if (docSnap.exists) {
@@ -27,6 +33,40 @@ const SuratKeluarDetail = () => {
   useEffect(() => {
     fetchSuratData();
   }, [id]);
+
+  // GET BAGIAN LIST
+  useEffect(() => {
+    const querybagian = query(bagianRef);
+    onSnapshot(querybagian, (querySnapshot) => {
+      const bagianData = [];
+      querySnapshot.forEach((doc) => {
+        const data = doc.data();
+        bagianData.push({
+          value: doc.id,
+          label: data.nama,
+        });
+      });
+      setBagianList(bagianData);
+    });
+  });
+
+  // HANDLE CONVERT TUJUAN BAG ID TO TUJUAN NAMA
+  const convertTujuanBagianIdToTujuanNama = (tujuanBagianId) => {
+    if(bagianList.length > 0){
+      const result = bagianList.filter((e) => e.value === tujuanBagianId)[0]?.label;
+      return result;
+    }
+    return '';
+  }
+
+  // HANDLE CONVERT ASAL BAG ID TO ASAL NAMA
+  const convertAsalBagianIdToAsalNama = (asalBagianId) => {
+    if(bagianList.length > 0){
+      const result = bagianList.filter((e) => e.value === asalBagianId)[0]?.label;
+      return result;
+    }
+    return '';
+  }
 
   return (
     <Dashboard>
@@ -50,10 +90,10 @@ const SuratKeluarDetail = () => {
                 <strong>Tanggal Keluar:</strong> {suratData.tglKeluar}
               </div>
               <div className="mb-4">
-                <strong>Asal:</strong> {suratData.asal}
+                <strong>Asal:</strong> {convertAsalBagianIdToAsalNama(suratData.asal)}
               </div>
               <div className="mb-4">
-                <strong>Tujuan:</strong> {suratData.tujuan}
+                <strong>Tujuan:</strong> {convertTujuanBagianIdToTujuanNama(suratData.tujuan)}
               </div>
               <div className="mb-4">
                 <strong>Sifat:</strong> {suratData.sifat}

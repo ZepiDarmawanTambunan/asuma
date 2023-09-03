@@ -12,6 +12,7 @@ import React, { useState, useEffect } from 'react';
 import Dashboard from '../components/ui/Dashboard'
 import { firebase } from '../config/firebaseConfig';
 import { collection, getDocs, getFirestore, query, where } from 'firebase/firestore';
+import { calculateDataByMonth } from '../utils/statistikUtils';
 
 ChartJS.register(
   CategoryScale,
@@ -49,17 +50,9 @@ const Statistik = () => {
     fetchData();
   }, []);
 
-  const suratMasukData = labels.map(month => {
-    const count = dataSuratMasuk.filter(item => new Date(item.tglTerima).getMonth() === labels.indexOf(month)).length;
-    return count;
-  });
-
+  const suratMasukData = calculateDataByMonth(dataSuratMasuk, labels, 'tglTerima');
+  const suratKeluarData = calculateDataByMonth(dataSuratKeluar, labels, 'tglKeluar');
   
-  const suratKeluarData = labels.map(month => {
-    const count = dataSuratKeluar.filter(item => new Date(item.tglKeluar).getMonth() === labels.indexOf(month)).length;
-    return count;
-  });
-
   const options = {
     responsive: true,
     plugins: {
@@ -68,7 +61,7 @@ const Statistik = () => {
       },
       title: {
         display: true,
-        text: 'Statistik pengarsipan data surat masuk & keluar',
+        text: new Date().getFullYear().toString(),
       },
     },
   };

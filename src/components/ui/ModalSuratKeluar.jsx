@@ -1,36 +1,36 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { firebase } from '../../config/firebaseConfig';
 import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
-import { getFirestore, collection, addDoc, doc, updateDoc } from 'firebase/firestore';
+import { getFirestore, collection, addDoc, doc, updateDoc, query, onSnapshot, getDoc } from 'firebase/firestore';
 import InputCustom from './Input';
 import SelectCustom from './SelectCustom';
-import { sifatSurat } from '../../constants/sifatSurat';
 
-const ModalSuratKeluar = ({ isOpen, onClose, surat }) => {
+const ModalSuratKeluar = ({ isOpen, onClose, surat, bagianIdSurat }) => {
   
-  const now = new Date();
+  // CONFIG
+  const dateNow = new Date(); //now for default data tglSurat, tglKeluar
+  const db = getFirestore(firebase);
+  const bagianRef = collection(db, 'bagian'); //get bagian
+
+  // DATA
   const [noSurat, setNoSurat] = useState('');
   const [noAgenda, setNoAgenda] = useState('');
   const [asal, setAsal] = useState('');
   const [tujuan, setTujuan] = useState('');
-  const [tglSurat, setTglSurat] = useState(now.toISOString().substr(0, 10));
-  const [tglKeluar, setTglKeluar] = useState(now.toISOString().substr(0, 10));
+  const [tglSurat, setTglSurat] = useState(dateNow.toISOString().substr(0, 10));
+  const [tglKeluar, setTglKeluar] = useState(dateNow.toISOString().substr(0, 10));
   const [perihal, setPerihal] = useState('');
   const [disposisi, setDisposisi] = useState('');
-  const [tembusan, setTembusan] = useState('');
-  const [sifat, setSifat] = useState('');
-  const [jenisSurat, setJenisSurat] = useState('surat-keluar');
   const [lampiran, setLampiran] = useState(0);
   const [file, setFile] = useState(null);
   const inputRef = useRef(null);
 
-  const [sifatOption, setSifatOption] = useState('');
-  const handleSifatChange = (event) => {
-    setSifatOption(event.target.value);
-  };
+  // DATA BAGIAN
+  const [bagianId, setBagianId] = useState('');
+  const [bagianList, setBagianList] = useState([]);
+  const asalBagianId = bagianList.filter((e) => e.label === asal)[0]?.value; //CONVERT ASAL (NAMA BAG) -> (BAG ID)
 
-  console.log(sifatOption);
-
+  // EDIT USE EFFECT
   useEffect(() => {
     if (surat) {
       setNoSurat(surat.noSurat);
@@ -41,15 +41,54 @@ const ModalSuratKeluar = ({ isOpen, onClose, surat }) => {
       setTglKeluar(surat.tglKeluar);
       setPerihal(surat.perihal);
       setDisposisi(surat.disposisi);
-      setSifat(surat.sifat);
-      setSifatOption(surat.sifat);
-      setTembusan(surat.tembusan);
       setLampiran(surat.lampiran);
     } else {
       reset();
     }
   }, [surat]);
 
+  // GET BAGIANLIST & DEFAULT VALUE SELECT TUJUAN
+  useEffect(() => {
+    const querybagian = query(bagianRef);
+    const unsubscribe = onSnapshot(querybagian, (querySnapshot) => {
+      const bagianData = [];
+      querySnapshot.forEach((doc) => {
+        const data = doc.data();
+        // if (doc.id !== bagianId) {
+          bagianData.push({
+            value: doc.id,
+            label: data.nama,
+          });
+        // }
+      });
+      setBagianList(bagianData);
+      if (bagianData.length > 0 && !tujuan) {
+        setTujuan(bagianData[0].value);
+      }
+    });
+    return () => unsubscribe();
+  }, [bagianId, tujuan]);
+
+  // GET BAGIAN ID, THIS ASAL (NAMA)
+  const fetchBagian = () => {
+    try {
+      const bagian = bagianList.filter((e) => e.value === bagianId)[0];
+      if(bagian){
+        setAsal(bagian.label);
+      }
+    } catch (error) {
+      alert('error :'+error);
+    }
+  }
+  
+  useEffect(() => {
+    setBagianId(bagianIdSurat);
+    if(bagianList.length > 0 && bagianIdSurat){
+      fetchBagian();
+    }
+  }, [bagianList, bagianIdSurat])
+
+  // HANDLE FILE
   const handleFileChange = ()=> {
     const selectedFile = inputRef.current.files[0];
     setFile(selectedFile);
@@ -88,15 +127,13 @@ const ModalSuratKeluar = ({ isOpen, onClose, surat }) => {
           await updateDoc(suratDocRef, {
             noSurat,
             noAgenda,
-            asal,
+            asal: asalBagianId,
             tujuan,
             tglSurat,
             tglKeluar,
             perihal,
             disposisi,
-            tembusan,
             lampiran,
-            sifat,
             fileURL: downloadURL
           });
 
@@ -104,15 +141,13 @@ const ModalSuratKeluar = ({ isOpen, onClose, surat }) => {
           await updateDoc(suratDocRef, {
             noSurat,
             noAgenda,
-            asal,
+            asal: asalBagianId,
             tujuan,
             tglSurat,
             tglKeluar,
             perihal,
             disposisi,
-            tembusan,
             lampiran,
-            sifat,
           });
         }
       }else{
@@ -125,32 +160,28 @@ const ModalSuratKeluar = ({ isOpen, onClose, surat }) => {
           await addDoc(suratRef, {
             noSurat,
             noAgenda,
-            asal,
+            asal: asalBagianId,
             tujuan,
             tglSurat,
             tglKeluar,
             perihal,
             disposisi,
-            sifat,
-            tembusan,
             lampiran,
-            jenisSurat,
+            jenisSurat: 'surat-keluar',
             fileURL: downloadURL
           });   
         }else{
           await addDoc(suratRef, {
             noSurat,
             noAgenda,
-            asal,
+            asal: asalBagianId,
             tujuan,
             tglSurat,
             tglKeluar,
             perihal,
             disposisi,
-            sifat,
-            tembusan,     
             lampiran,     
-            jenisSurat,
+            jenisSurat: 'surat-keluar',
           });   
         }
       }
@@ -169,18 +200,16 @@ const ModalSuratKeluar = ({ isOpen, onClose, surat }) => {
     setTujuan('');
     setPerihal('');
     setDisposisi('');
-    setSifat('');
-    setTembusan('');
     setLampiran(0);
-    setTglSurat(now.toISOString().substr(0, 10));
-    setTglKeluar(now.toISOString().substr(0, 10));
+    setTglSurat(dateNow.toISOString().substr(0, 10));
+    setTglKeluar(dateNow.toISOString().substr(0, 10));
     if (inputRef.current) {
       inputRef.current.value = '';
     }
     setFile(null);
+    setBagianList([]);
   }
-
-
+  
     return (
         <div className={`fixed inset-0 ${isOpen ? 'flex' : 'hidden'} justify-center items-center z-50`}>
           <div className="bg-white rounded-lg p-6 w-full max-w-md h-3/4 overflow-y-auto shadow-xl z-10 relative">
@@ -206,15 +235,20 @@ const ModalSuratKeluar = ({ isOpen, onClose, surat }) => {
             <h2 className="text-xl font-semibold mb-4">{surat ? 'Edit Surat' : 'Tambah Surat'}</h2>
             <InputCustom type='text' id="no_surat" placeholder="No Surat" value={noSurat} handleChange={setNoSurat} />
             <InputCustom type='text' id="no_agenda" placeholder="No Agenda" value={noAgenda} handleChange={setNoAgenda} />
-            <InputCustom type='text' id="asal" placeholder="Asal" value={asal} handleChange={setAsal} />
-            <InputCustom type='text' id="tujuan" placeholder="Tujuan" value={tujuan} handleChange={setTujuan} />
+            <InputCustom type='text' id="asal" placeholder="Asal" value={asal} handleChange={setAsal} disabled />
+            <SelectCustom           
+              id="tujuan"
+              label="Tujuan Surat"
+              onChange={(e) => setTujuan(e.target.value)}
+              options={bagianList}
+              value={tujuan} 
+            />
             <InputCustom type='date' id="tgl_surat" placeholder="Tanggal Surat" value={tglSurat} handleChange={setTglSurat} label="Tanggal Surat" />
             <InputCustom type='date' id="tgl_keluar" placeholder="Tanggal Keluar" value={tglKeluar} handleChange={setTglKeluar} label="Tanggal Keluar" />
             <InputCustom type='textarea' id="perihal" placeholder="Perihal" value={perihal} handleChange={setPerihal} />
             <InputCustom type='textarea' id="disposisi" placeholder="Disposisi" value={disposisi} handleChange={setDisposisi} />
             <InputCustom type='number' id="lampiran" placeholder="Jumlah Lampiran" value={lampiran} handleChange={setLampiran} label="Jumlah Lampiran" />
             <InputCustom type='file' id="file" placeholder="File" inputRef={inputRef} handleChange={handleFileChange} />
-            <SelectCustom id="sifatSurat" label="Sifat Surat" options={sifatSurat} value={sifatOption} onChange={handleSifatChange} />
             {/* <input type='file' onChange={(e) => handleFileChange(e)} className="mb-2 p-2 border rounded w-full" /> */}
             <button
               className="bg-[#435334] hover:bg-[#263A29] text-white px-4 py-2 rounded w-full mt-2"

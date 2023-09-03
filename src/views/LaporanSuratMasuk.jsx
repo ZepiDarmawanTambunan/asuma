@@ -82,35 +82,53 @@ function LaporanSuratMasuk() {
           </button>
         </div>
 
-        <table className="w-full border">
+        <table className="w-full border table-fixed">
           <thead>
             <tr className="bg-gray-100">
-              <th className="border px-4 py-2">No. Surat</th>
+              <th className="border px-4 py-2 w-1/8">No. Surat</th>
               <th className="border px-4 py-2">No. Agenda</th>
               <th className="border px-4 py-2">Tgl Surat</th>
               <th className="border px-4 py-2">Tgl Terima</th>
-              <th className="border px-4 py-2">Asal</th>
-              <th className="border px-4 py-2">Tujuan</th>
-              <th className="border px-4 py-2">Perihal</th>
+              <th className="border px-4 py-2 w-1/6">Asal</th>
+              <th className="border px-4 py-2 w-1/8">Tujuan</th>
+              <th className="border px-4 py-2 w-1/4">Perihal</th>
+              <th className="border px-4 py-2 w-1/6">Disposisi</th>
             </tr>
           </thead>
           <tbody>
             {laporanData.length === 0 ? (
               <tr>
-                <td colSpan="6" className="border px-4 py-2 text-center">
+                <td colSpan="8" className="border px-4 py-2 text-center">
                   Tidak ada data yang cocok dengan filter yang diterapkan.
                 </td>
               </tr>
             ) : (
               laporanData.map((laporan, index) => (
                 <tr key={index} className="odd:bg-gray-50 even:bg-white">
-                  <td className="border px-4 py-2">{laporan.noSurat}</td>
-                  <td className="border px-4 py-2">{laporan.noAgenda}</td>
-                  <td className="border px-4 py-2">{laporan.tglSurat}</td>
-                  <td className="border px-4 py-2">{laporan.tglTerima}</td>
-                  <td className="border px-4 py-2">{laporan.asal}</td>
-                  <td className="border px-4 py-2">{laporan.tujuan}</td>
-                  <td className="border px-4 py-2">{laporan.perihal}</td>
+                  <td className="print:px-1 print:py-1 border px-4 py-2 break-words">
+                    {laporan.noSurat}
+                  </td>
+                  <td className="print:px-1 print:py-1 border px-4 py-2 break-words">
+                    {laporan.noAgenda}
+                    </td>
+                  <td className="print:px-1 print:py-1 border px-4 py-2">
+                    {laporan.tglSurat}
+                  </td>
+                  <td className="print:px-1 print:py-1 border px-4 py-2">
+                    {laporan.tglTerima}
+                  </td>
+                  <td className="print:px-1 print:py-1 border px-4 py-2 break-words">
+                    {laporan.asal}
+                  </td>
+                  <td className="print:px-1 print:py-1 border px-4 py-2 break-words">
+                    {laporan.tujuan}
+                  </td>
+                  <td className="print:px-1 print:py-1 border px-4 py-2 break-words">
+                    {laporan.perihal}
+                  </td>
+                  <td className="print:px-1 print:py-1 border px-4 py-2 break-words">
+                    {laporan.disposisi}
+                  </td>
                 </tr>
               ))
             )}
